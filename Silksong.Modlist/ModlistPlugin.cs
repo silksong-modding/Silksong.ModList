@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -20,6 +21,11 @@ public partial class ModlistPlugin : BaseUnityPlugin
 
     private GameObject? _modListGO;
     private ModListDraw? _modListDraw;
+
+    private static string CombinedAsString<T>(IEnumerable<T> e)
+    {
+        return $"[{string.Join(", ", e)}]";
+    }
     
     // We need to load _after_ all other plugins are loaded - on Awake() all dependent mods are guaranteed to _not_ be loaded!
     private void Start()
@@ -29,8 +35,8 @@ public partial class ModlistPlugin : BaseUnityPlugin
         DontDestroyOnLoad(_modListGO);
         
         GenerateModList();
-        Logger.LogInfo($"Plugins: {_loadedPlugins}");
-        Logger.LogInfo($"Dependents: {_loadedDependents}");
+        Logger.LogInfo($"Plugins: {CombinedAsString(_loadedPlugins.Select(plugin => plugin.Name))}");
+        Logger.LogInfo($"Dependents: {CombinedAsString(_loadedDependents.Select(dep => dep.Name))}");
     }
 
     private void GenerateModList()
@@ -39,35 +45,27 @@ public partial class ModlistPlugin : BaseUnityPlugin
         Logger.LogInfo($"Plugins: {infos.Count}");
         _loadedPlugins.Clear();
         _loadedDependents.Clear();
-        foreach (var (k, v) in infos)
+        foreach (var (pluginId, pluginInfo) in infos)
         {
-            Logger.LogInfo($"Loading plugin {v}");
-            if (v == null)
+            Logger.LogInfo($"Loading plugin {pluginInfo}");
+            if (pluginInfo == null)
             {
-                Logger.LogInfo($"Plugin {k} has no PluginInfo, ignoring...");
+                Logger.LogInfo($"Plugin {pluginId} has no PluginInfo, ignoring...");
                 continue;
             }
-            try
+
+            var metadata = pluginInfo.Metadata;
+            Logger.LogInfo($"Id: {pluginId}");
+            var dependency = pluginInfo.Dependencies.FirstOrDefault(x =>
+                x.Flags.HasFlag(BepInDependency.DependencyFlags.HardDependency) &&
+                x.DependencyGUID == Constants.Guid);
+            if (dependency != null)
             {
-                var attr = (Attribute.GetCustomAttribute(v.Instance.GetType(), typeof(BepInPlugin)) as BepInPlugin)!;
-                Logger.LogInfo($"Attr {attr.GUID}");
-                Logger.LogInfo($"Dependencies {v.Dependencies}");
-                var dependency = v.Dependencies.FirstOrDefault(x =>
-                    x.Flags.HasFlag(BepInDependency.DependencyFlags.HardDependency) &&
-                    x.DependencyGUID == Constants.Guid);
-                if (dependency != null)
-                {
-                    _loadedDependents.Add(attr);
-                }
-                _loadedPlugins.Add(attr);
-                
-                Logger.LogInfo($"{v.Dependencies}");
-                
+                _loadedDependents.Add(metadata);
             }
-            catch (AmbiguousMatchException)
-            {
-                Logger.LogWarning($"Mod {k} has multiple BepinPlugin attributes, ignoring...");  //TODO: can this actually happen, or is this unnecessary?
-            }
+            _loadedPlugins.Add(metadata);
+                
+            Logger.LogInfo($"Dependencies: {CombinedAsString(pluginInfo.Dependencies.Select(dep => dep.DependencyGUID))}");
         }
 
         _modListDraw!.drawString = GetMinorList();
