@@ -58,34 +58,26 @@ public partial class ModlistPlugin : BaseUnityPlugin
         Logger.LogDebug($"Plugins: {infos.Count}");
         _loadedMinors.Clear();
         _loadedMajors.Clear();
-        foreach (var (k, v) in infos)
+        foreach (var (pluginId, pluginInfo) in infos)
         {
-            if (v == null)
+            if (pluginInfo == null)
             {
-                Logger.LogWarning($"Plugin {k} has no PluginInfo, ignoring...");
+                Logger.LogWarning($"Plugin {pluginId} has no PluginInfo, ignoring...");
                 continue;
             }
-
-            try
+            
+            var metadata = (Attribute.GetCustomAttribute(pluginInfo.Instance.GetType(), typeof(BepInPlugin)) as BepInPlugin)!;
+            Logger.LogDebug($"GUID {metadata.GUID} w/ {pluginInfo.Dependencies.Count()} dependencies");
+            var dependency = pluginInfo.Dependencies.FirstOrDefault(x =>
+                x.Flags.HasFlag(BepInDependency.DependencyFlags.HardDependency) &&
+                x.DependencyGUID == Constants.Guid);
+            if (dependency != null)
             {
-                var attr = (Attribute.GetCustomAttribute(v.Instance.GetType(), typeof(BepInPlugin)) as BepInPlugin)!;
-                Logger.LogDebug($"GUID {attr.GUID} w/ {v.Dependencies.Count()} dependencies");
-                var dependency = v.Dependencies.FirstOrDefault(x =>
-                    x.Flags.HasFlag(BepInDependency.DependencyFlags.HardDependency) &&
-                    x.DependencyGUID == Constants.Guid);
-                if (dependency != null)
-                {
-                    _loadedMajors.Add(attr);
-                }
-                else
-                {
-                    _loadedMinors.Add(attr);
-                }                
+                _loadedMajors.Add(metadata);
             }
-            catch (AmbiguousMatchException)
+            else
             {
-                Logger.LogWarning(
-                    $"Mod {k} has multiple BepInPlugin attributes, ignoring..."); //TODO: can this actually happen, or is this unnecessary?
+                _loadedMinors.Add(metadata);
             }
         }
 
