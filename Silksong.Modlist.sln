@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Silksong.Modlist", "Silksong.Modlist\Silksong.Modlist.csproj", "{8A422C5E-9797-4BBC-89AA-523D5EFC0BA6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Silksong.Modlist", "Silksong.Modlist.csproj", "{8A422C5E-9797-4BBC-89AA-523D5EFC0BA6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
