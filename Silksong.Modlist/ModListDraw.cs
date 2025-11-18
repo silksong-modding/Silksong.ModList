@@ -20,7 +20,7 @@ public class ModListDraw : MonoBehaviour
     
     public void OnGUI()
     {
-        if (UIManager.instance is null)
+        if (UIManager._instance == null)
         {
             return;
         }
