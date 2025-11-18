@@ -44,6 +44,7 @@
     <ItemGroup>
         <Folder Remove="thunderstore/temp;thunderstore/dist"/>
         <None Include="README.md" Pack="True" PackagePath="README.md"/>
+        <None Include="thunderstore/icon.png" Pack="True" PackagePath="icon.png" />
     </ItemGroup>
     <Target Name="CopyAndPackageMod" AfterTargets="PostBuildEvent">
         <ItemGroup>
