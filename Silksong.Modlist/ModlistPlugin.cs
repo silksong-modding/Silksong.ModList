@@ -35,6 +35,7 @@ public partial class ModlistPlugin : BaseUnityPlugin
             "HideMinorList", 
             false, 
             "Whether to hide the modlist. Note that some mods will always display in the modlist for moderation reasons.");
+        Logger.LogInfo($"Silksong version: {(global::Constants.GAME_VERSION)}");
     }
 
     // We need to load _after_ all other plugins are loaded - on Awake() all dependent mods are guaranteed to _not_ be loaded!
@@ -47,8 +48,6 @@ public partial class ModlistPlugin : BaseUnityPlugin
         DontDestroyOnLoad(_modListGO);
 
         GenerateModList();
-        Logger.LogInfo($"Plugins: {_loadedMinors}");
-        Logger.LogInfo($"Dependents: {_loadedMajors}");
 
         HideMinorList.SettingChanged += (sender, args) => GenerateModList();
     }
@@ -56,7 +55,7 @@ public partial class ModlistPlugin : BaseUnityPlugin
     private void GenerateModList()
     {
         Dictionary<string, PluginInfo> infos = BepInEx.Bootstrap.Chainloader.PluginInfos!;
-        Logger.LogInfo($"Plugins: {infos.Count}");
+        Logger.LogDebug($"Plugins: {infos.Count}");
         _loadedMinors.Clear();
         _loadedMajors.Clear();
         foreach (var (k, v) in infos)
@@ -70,8 +69,7 @@ public partial class ModlistPlugin : BaseUnityPlugin
             try
             {
                 var attr = (Attribute.GetCustomAttribute(v.Instance.GetType(), typeof(BepInPlugin)) as BepInPlugin)!;
-                Logger.LogDebug($"Attr {attr.GUID}");
-                Logger.LogDebug($"Dependencies {v.Dependencies}");
+                Logger.LogDebug($"GUID {attr.GUID} w/ {v.Dependencies.Count()} dependencies");
                 var dependency = v.Dependencies.FirstOrDefault(x =>
                     x.Flags.HasFlag(BepInDependency.DependencyFlags.HardDependency) &&
                     x.DependencyGUID == Constants.Guid);
