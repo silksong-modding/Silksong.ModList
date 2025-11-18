@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Silksong.Modlist", "Silksong.Modlist\Silksong.Modlist.csproj", "{600F86EF-D227-43D7-A06D-D963DCC3CE39}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Silksong.Modlist", "Silksong.Modlist\Silksong.Modlist.csproj", "{8A422C5E-9797-4BBC-89AA-523D5EFC0BA6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -8,9 +8,9 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{600F86EF-D227-43D7-A06D-D963DCC3CE39}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{600F86EF-D227-43D7-A06D-D963DCC3CE39}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{600F86EF-D227-43D7-A06D-D963DCC3CE39}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{600F86EF-D227-43D7-A06D-D963DCC3CE39}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8A422C5E-9797-4BBC-89AA-523D5EFC0BA6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8A422C5E-9797-4BBC-89AA-523D5EFC0BA6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8A422C5E-9797-4BBC-89AA-523D5EFC0BA6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8A422C5E-9797-4BBC-89AA-523D5EFC0BA6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

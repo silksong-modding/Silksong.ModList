@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using BepInEx;
+using BepInEx.Configuration;
+using HarmonyLib;
 using UnityEngine;
 
 namespace Silksong.Modlist;
@@ -15,72 +17,134 @@ public static class Constants
 [BepInAutoPlugin(id: Constants.Guid)]
 public partial class ModlistPlugin : BaseUnityPlugin
 {
-    private List<BepInPlugin> _loadedPlugins = [];
-    private List<BepInPlugin> _loadedDependents = [];
+    private List<BepInPlugin> _loadedMinors = [];
+    private List<BepInPlugin> _loadedMajors = [];
 
     private GameObject? _modListGO;
     private ModListDraw? _modListDraw;
-    
+
+    public static ModlistPlugin Instance  { get; private set; }
+    private Harmony _harmony;
+
+    internal ConfigEntry<bool> HideMinorList;
+
+    private void Awake()
+    {
+        Instance = this;
+        HideMinorList = Config.Bind("General", 
+            "HideMinorList", 
+            false, 
+            "Whether to hide the modlist. Note that some mods will always display in the modlist for moderation reasons.");
+    }
+
     // We need to load _after_ all other plugins are loaded - on Awake() all dependent mods are guaranteed to _not_ be loaded!
     private void Start()
     {
+        _harmony = Harmony.CreateAndPatchAll(typeof(ModlistPatches));
+        
         _modListGO = new GameObject("Silksong.ModList");
         _modListDraw = _modListGO.AddComponent<ModListDraw>();
         DontDestroyOnLoad(_modListGO);
-        
+
         GenerateModList();
-        Logger.LogInfo($"Plugins: {_loadedPlugins}");
-        Logger.LogInfo($"Dependents: {_loadedDependents}");
+        Logger.LogInfo($"Plugins: {_loadedMinors}");
+        Logger.LogInfo($"Dependents: {_loadedMajors}");
+
+        HideMinorList.SettingChanged += (sender, args) => GenerateModList();
     }
 
     private void GenerateModList()
     {
-        var infos = BepInEx.Bootstrap.Chainloader.PluginInfos;
+        Dictionary<string, PluginInfo> infos = BepInEx.Bootstrap.Chainloader.PluginInfos!;
         Logger.LogInfo($"Plugins: {infos.Count}");
-        _loadedPlugins.Clear();
-        _loadedDependents.Clear();
+        _loadedMinors.Clear();
+        _loadedMajors.Clear();
         foreach (var (k, v) in infos)
         {
-            Logger.LogInfo($"Loading plugin {v}");
             if (v == null)
             {
-                Logger.LogInfo($"Plugin {k} has no PluginInfo, ignoring...");
+                Logger.LogWarning($"Plugin {k} has no PluginInfo, ignoring...");
                 continue;
             }
+
             try
             {
                 var attr = (Attribute.GetCustomAttribute(v.Instance.GetType(), typeof(BepInPlugin)) as BepInPlugin)!;
-                Logger.LogInfo($"Attr {attr.GUID}");
-                Logger.LogInfo($"Dependencies {v.Dependencies}");
+                Logger.LogDebug($"Attr {attr.GUID}");
+                Logger.LogDebug($"Dependencies {v.Dependencies}");
                 var dependency = v.Dependencies.FirstOrDefault(x =>
                     x.Flags.HasFlag(BepInDependency.DependencyFlags.HardDependency) &&
                     x.DependencyGUID == Constants.Guid);
                 if (dependency != null)
                 {
-                    _loadedDependents.Add(attr);
+                    _loadedMajors.Add(attr);
                 }
-                _loadedPlugins.Add(attr);
-                
-                Logger.LogInfo($"{v.Dependencies}");
-                
+                else
+                {
+                    _loadedMinors.Add(attr);
+                }                
             }
             catch (AmbiguousMatchException)
             {
-                Logger.LogWarning($"Mod {k} has multiple BepinPlugin attributes, ignoring...");  //TODO: can this actually happen, or is this unnecessary?
+                Logger.LogWarning(
+                    $"Mod {k} has multiple BepInPlugin attributes, ignoring..."); //TODO: can this actually happen, or is this unnecessary?
             }
         }
 
-        _modListDraw!.drawString = GetMinorList();
-    }
-    
-    // TODO: implement major once we move to better rendering / mods menu
-    private string GetMajorList()
-    {
-        return string.Join("\n", _loadedDependents.Select((plugin) => $"{plugin.GUID}"));
+        _modListDraw!.drawString = GetListString();
     }
 
-    private string GetMinorList()
+    private string GetListString()
     {
-        return string.Join("\n", _loadedPlugins.Select((plugin) => $"{plugin.Name}: {plugin.Version}"));
+        var totalList = GetMajorList();
+        if (HideMinorList.Value)
+        {
+            // If major list is empty, we can completely hide the modlist other than the patch text
+            if (totalList.Count == 0)
+            {
+                return ""; 
+            }
+            // Otherwise display majors & the minor count
+            totalList.Add($"& {GetMinorList().Count} others");
+        }
+        else
+        {
+            totalList.AddRange(GetMinorList());
+        }
+        return string.Join("\n", totalList);
+    }
+
+    private List<string> GetMajorList()
+    {
+        return _loadedMajors.Select(plugin => $"{plugin.Name}: {plugin.Version}").ToList();
+    }
+
+    private List<string> GetMinorList()
+    {
+        return _loadedMinors.Select(plugin => $"{plugin.Name}: {plugin.Version}").ToList();
+    }
+
+    public int GetModCount()
+    {
+        return _loadedMajors.Count + _loadedMinors.Count;
+    }
+
+    public string GetMajorString()
+    {
+        return string.Join(", ", _loadedMajors.Select(plugin => $"{plugin.Name}"));
+    }
+}
+
+// ReSharper disable InconsistentNaming
+public static partial class ModlistPatches
+{
+    [HarmonyPatch(typeof(SetVersionNumber), nameof(SetVersionNumber.Start))]
+    [HarmonyPostfix]
+    public static void SetVersionNumber_Start(SetVersionNumber __instance)
+    {
+        var currentText = __instance.textUi.text;
+
+        currentText += $" | {ModlistPlugin.Instance.GetModCount()} Mods\n{ModlistPlugin.Instance.GetMajorString()}";
+        __instance.textUi.text = currentText;
     }
 }
