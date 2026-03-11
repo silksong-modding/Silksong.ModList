@@ -36,14 +36,14 @@ public partial class ModlistPlugin : BaseUnityPlugin
     private List<BepInPlugin> _majors = [];
     private List<BepInPlugin> _minors = [];
     private List<PatcherMeta> _patchers = [];
-    
+
     public string GameVersion => global::Constants.GetConstantValue<string>("GAME_VERSION");
     // consts are inlined at compile time; GetConstantValue allows a runtime check to get the accurate value.
 
     private GameObject? _modListGO;
     private ModListDraw? _modListDraw;
 
-    public static ModlistPlugin Instance  { get; private set; }
+    public static ModlistPlugin Instance { get; private set; }
 
     internal ConfigEntry<DisplayMode> DisplayMode;
 
@@ -54,8 +54,7 @@ public partial class ModlistPlugin : BaseUnityPlugin
             "DisplayMode",
             Modlist.DisplayMode.Full,
             "How to display the top-left mod list. The mod count on the title screen will always be visible.");
-        Logger.LogInfo($"Silksong version: {GameVersion}");
-        
+
         _patchers = GetPatchers(); // This needs to run only once, as patching context is over by the time plugins are loaded.
     }
 
@@ -63,14 +62,37 @@ public partial class ModlistPlugin : BaseUnityPlugin
     private void Start()
     {
         Harmony.CreateAndPatchAll(typeof(ModlistPatches));
-        
+
         _modListGO = new GameObject("Silksong.ModList");
         _modListDraw = _modListGO.AddComponent<ModListDraw>();
         DontDestroyOnLoad(_modListGO);
-        
+
         DisplayMode.SettingChanged += (sender, args) => RefreshModList();
         GenerateModList();
+        
+        Logger.LogInfo(LogModLists());
+        
+        Logger.LogInfo("Plugins Directory:\n" + FileTree.RenderTree(Paths.PluginPath));
+        Logger.LogInfo("Patchers Directory:\n" + FileTree.RenderTree(Paths.PatcherPluginPath));
     }
+
+    private string LogModLists()
+    {
+        var builder = new StringBuilder($"\n======== Modlist ========\nSilksong version: {GameVersion}\n");
+        
+        builder.AppendLine($"PLUGINS: {_majors.Count + _minors.Count} ({_majors.Count} depend on Modlist)");
+        foreach (var x in _majors.OrderBy(x => x.Name)) 
+            builder.AppendLine($"[{x.Name}".PadRight(20) + $": {x.Version}] {x.GUID}");
+        foreach (var x in _minors.OrderBy(x => x.Name)) 
+            builder.AppendLine($"[{x.Name}".PadRight(20) + $": {x.Version}] {x.GUID}");
+        builder.AppendLine($"PATCHERS: {_patchers.Count}");
+        foreach (var x in _patchers.OrderBy(x => x.AsmName)) 
+            builder.AppendLine($"[{x.AsmName}".PadRight(40) + $": {x.AsmVersion}]::{x.TypeName}");
+
+        builder.AppendLine("=========================");
+        return builder.ToString();
+    }
+
 
     private void RefreshModList() // TODO: duplicate stub
     {
