@@ -46,6 +46,7 @@ public partial class ModlistPlugin : BaseUnityPlugin
     public static ModlistPlugin Instance { get; private set; }
 
     internal ConfigEntry<DisplayMode> DisplayMode;
+    internal ConfigEntry<bool> LogFileTree;
 
     private void Awake()
     {
@@ -54,6 +55,12 @@ public partial class ModlistPlugin : BaseUnityPlugin
             "DisplayMode",
             Modlist.DisplayMode.Full,
             "How to display the top-left mod list. The mod count on the title screen will always be visible.");
+
+        LogFileTree = Config.Bind("General",
+            "LogModFiles",
+            true,
+            "Whether to include a filetree in LogOutput.log for troubleshooting."
+        );
 
         _patchers = GetPatchers(); // This needs to run only once, as patching context is over by the time plugins are loaded.
     }
@@ -71,14 +78,17 @@ public partial class ModlistPlugin : BaseUnityPlugin
         GenerateModList();
         
         Logger.LogInfo(LogModLists());
-        
-        Logger.LogInfo("Plugins Directory:\n" + FileTree.RenderTree(Paths.PluginPath));
-        Logger.LogInfo("Patchers Directory:\n" + FileTree.RenderTree(Paths.PatcherPluginPath));
+
+        if (LogFileTree.Value)
+        {
+            Logger.LogInfo("Plugins Directory:\n" + FileTree.RenderTree(Paths.PluginPath));
+            Logger.LogInfo("Patchers Directory:\n" + FileTree.RenderTree(Paths.PatcherPluginPath));
+        }
     }
 
     private string LogModLists()
     {
-        var builder = new StringBuilder($"\n======== Modlist ========\nSilksong version: {GameVersion}\n");
+        var builder = new StringBuilder($"\n\n======== Modlist ========\nSilksong version: {GameVersion}\n");
         
         builder.AppendLine($"PLUGINS: {_majors.Count + _minors.Count} ({_majors.Count} depend on Modlist)");
         foreach (var x in _majors.OrderBy(x => x.Name)) 

@@ -7,7 +7,7 @@ namespace Silksong.Modlist;
 
 public static class FileTree
 {
-    public static int MAX_DEPTH = 2;
+    public static int MAX_DEPTH = 3;
 
     private static readonly Func<string, bool>[] _excludes =
     [
