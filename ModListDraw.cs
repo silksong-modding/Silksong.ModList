@@ -1,5 +1,6 @@
 using GlobalEnums;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Silksong.Modlist;
 
@@ -7,16 +8,32 @@ namespace Silksong.Modlist;
 public class ModListDraw : MonoBehaviour
 {
     private static readonly GUIStyle Style = new GUIStyle(GUIStyle.none);
+
+    private const int DesignFontSize = 15;
     
-    public string? drawString;
+    internal string MenuDrawString = "";
+    internal string PauseDrawString = "";
+
+    private string DrawString => UIManager.instance.uiState switch
+    {
+        UIState.MAIN_MENU_HOME => MenuDrawString,
+        UIState.PAUSED => PauseDrawString,
+        _ => ""
+    };
+    
     private void Start()
     
     {
         Style.normal.textColor = Color.white;
         Style.alignment = TextAnchor.UpperLeft;
         Style.padding = new RectOffset(5, 5, 5, 5);
-        Style.fontSize = 15;
     }
+    
+    private static float HScale => Screen.width / 1920f;
+    private static float VScale => Screen.height / 1080f;
+    private static float ScaleFactor => HScale < VScale ? HScale : VScale;
+
+    private static int ScaledFontSize => (int)(DesignFontSize * ScaleFactor);
     
     public void OnGUI()
     {
@@ -25,9 +42,10 @@ public class ModListDraw : MonoBehaviour
             return;
         }
 
-        if (drawString != null && UIManager.instance.uiState is UIState.MAIN_MENU_HOME or UIState.PAUSED)
+        if (UIManager.instance.uiState is UIState.MAIN_MENU_HOME or UIState.PAUSED)
         {
-            GUI.Label(new Rect(0, 0, Screen.width, Screen.height), drawString, Style);
+            Style.fontSize = ScaledFontSize;
+            GUI.Label(new Rect(0, 0, Screen.width, Screen.height), DrawString, Style);
         }
     }
 }

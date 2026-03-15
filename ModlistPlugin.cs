@@ -25,9 +25,21 @@ internal enum DisplayMode
 
 internal record struct PatcherMeta
 {
+    /// <summary>
+    /// Some common assemblies have poor assembly names; explicitly override these for clarity.
+    /// </summary>
+    private static Dictionary<string, string> AsmOverrides = new()
+    {
+        { "0.com.github.MonoDetour.BepInEx.5", "MonoDetour" },
+        { "BepInEx.MonoMod.AutoHookGenPatcher", "AutoHookGenPatcher"},
+        { "Hamunii.DetourContext.Dispose_Fix", "DetourCtxDisposeFix"}
+    };
+    
     public string AsmName;
     public string AsmVersion;
     public string TypeName;
+
+    public string CleanAsmName => AsmOverrides.GetValueOrDefault(AsmName, AsmName);
 }
 
 [BepInAutoPlugin(id: Constants.Guid)]
@@ -74,7 +86,7 @@ public partial class ModlistPlugin : BaseUnityPlugin
         _modListDraw = _modListGO.AddComponent<ModListDraw>();
         DontDestroyOnLoad(_modListGO);
 
-        DisplayMode.SettingChanged += (sender, args) => RefreshModList();
+        DisplayMode.SettingChanged += (sender, args) => GenerateModList();
         GenerateModList();
         
         Logger.LogInfo(LogModLists());
@@ -92,21 +104,15 @@ public partial class ModlistPlugin : BaseUnityPlugin
         
         builder.AppendLine($"PLUGINS: {_majors.Count + _minors.Count} ({_majors.Count} depend on Modlist)");
         foreach (var x in _majors.OrderBy(x => x.Name)) 
-            builder.AppendLine($"[{x.Name}".PadRight(20) + $": {x.Version}] {x.GUID}");
+            builder.AppendLine($"[ {x.Name}".PadRight(20) + $": {x.Version}".PadRight(8) + $"] {x.GUID}");
         foreach (var x in _minors.OrderBy(x => x.Name)) 
-            builder.AppendLine($"[{x.Name}".PadRight(20) + $": {x.Version}] {x.GUID}");
+            builder.AppendLine($"[{x.Name}".PadRight(20) + $": {x.Version}".PadRight(8) + $"] {x.GUID}");
         builder.AppendLine($"PATCHERS: {_patchers.Count}");
         foreach (var x in _patchers.OrderBy(x => x.AsmName)) 
-            builder.AppendLine($"[{x.AsmName}".PadRight(40) + $": {x.AsmVersion}]::{x.TypeName}");
+            builder.AppendLine($"[{x.AsmName}".PadRight(40) + $": {x.AsmVersion}".PadRight(10) + $"]::{x.TypeName}");
 
         builder.AppendLine("=========================");
         return builder.ToString();
-    }
-
-
-    private void RefreshModList() // TODO: duplicate stub
-    {
-        GenerateModList(); 
     }
 
     private void GenerateModList()
@@ -114,29 +120,28 @@ public partial class ModlistPlugin : BaseUnityPlugin
         (_majors, _minors) = GetPlugins();
         
         _modListDraw!.enabled = DisplayMode.Value != Modlist.DisplayMode.Hidden;
-        _modListDraw!.drawString = GetListString();
-    }
-
-    private string GetListString()
-    {
-        switch (DisplayMode.Value)
+        _modListDraw!.MenuDrawString = DisplayMode.Value switch
         {
-            case Modlist.DisplayMode.Hidden:
-                return "";
-            case Modlist.DisplayMode.Reduced:
-                return $"{ModListPrefix}\n{MajorListJoined}\n+ {_minors.Count} others & {_patchers.Count} patchers";
-            case Modlist.DisplayMode.Full:
-            default:
-                return $"{ModListPrefix}\n{PatcherListJoined}\n{MajorListJoined}\n{MinorListJoined}";
-        }
+            Modlist.DisplayMode.Hidden => "",
+            Modlist.DisplayMode.Reduced => ReducedListString,
+            _ => FullListString
+        };
+        _modListDraw!.PauseDrawString = DisplayMode.Value switch
+        {
+            Modlist.DisplayMode.Hidden => "",
+            _ => ReducedListString
+        };
     }
+    
+    public string ReducedListString => $"{ModListPrefix}\n{MajorListJoined}\n+ {_minors.Count} others\n& {_patchers.Count} patchers";
+    public string FullListString => $"{ModListPrefix}\n{PatcherListJoined}\n{MajorListJoined}\n{MinorListJoined}";
 
-    private string ModListPrefix => $"Silksong v{GameVersion} (Modlist {Version})";
+    private string ModListPrefix => $"v{GameVersion}-{Version}";
     
     
     public List<string> MajorList => _majors.Select(plugin => $"{plugin.Name}: {plugin.Version}").ToList();
     public List<string> MinorList => _minors.Select(plugin => $"{plugin.Name}: {plugin.Version}").ToList();
-    public List<string> PatcherList => _patchers.Select(patcher => $"{patcher.AsmName}: {patcher.AsmVersion} (patcher)").ToList();
+    public List<string> PatcherList => _patchers.Select(patcher => $"{patcher.CleanAsmName} * : {patcher.AsmVersion}").ToList();
 
     private string MajorListJoined => string.Join("\n", MajorList);
     private string MinorListJoined => string.Join("\n", MinorList);
