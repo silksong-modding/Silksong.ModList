@@ -106,10 +106,10 @@ public partial class ModlistPlugin : BaseUnityPlugin
         foreach (var x in _majors.OrderBy(x => x.Name)) 
             builder.AppendLine($"[ {x.Name}".PadRight(20) + $": {x.Version}".PadRight(8) + $"] {x.GUID}");
         foreach (var x in _minors.OrderBy(x => x.Name)) 
-            builder.AppendLine($"[{x.Name}".PadRight(20) + $": {x.Version}".PadRight(8) + $"] {x.GUID}");
+            builder.AppendLine($"[ {x.Name}".PadRight(20) + $": {x.Version}".PadRight(8) + $"] {x.GUID}");
         builder.AppendLine($"PATCHERS: {_patchers.Count}");
         foreach (var x in _patchers.OrderBy(x => x.AsmName)) 
-            builder.AppendLine($"[{x.AsmName}".PadRight(40) + $": {x.AsmVersion}".PadRight(10) + $"]::{x.TypeName}");
+            builder.AppendLine($"[ {x.AsmName}".PadRight(40) + $": {x.AsmVersion}".PadRight(10) + $"]::{x.TypeName}");
 
         builder.AppendLine("=========================");
         return builder.ToString();
