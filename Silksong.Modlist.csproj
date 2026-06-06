@@ -57,7 +57,7 @@
         </PropertyGroup>
         <Copy
                 SourceFiles="@(Binaries)"
-                DestinationFolder="$(SilksongPluginsFolder)/silksong-modding-$(AssemblyTitle)/%(Binaries.LocalDir)"
+                DestinationFolder="$(SilksongPluginsFolder)/silksong_modding-$(AssemblyTitle)/%(Binaries.LocalDir)"
                 Condition="'$(SilksongPluginsFolder)' != '' And Exists('$(SilksongPluginsFolder)')"
         />
         <RemoveDir Directories="$(ThunderstoreDir)/temp;$(ThunderstoreDir)/dist"/>

@@ -228,6 +228,12 @@ public partial class ModlistPlugin : BaseUnityPlugin
                 continue;
             }
 
+            if (pluginInfo.Instance is null)
+            {
+                Logger.LogWarning($"Plugin {pluginId} is null, ignoring...");
+                continue;
+            }
+
             var metadata = (Attribute.GetCustomAttribute(pluginInfo.Instance.GetType(), typeof(BepInPlugin)) as BepInPlugin)!;
             var dependency = pluginInfo.Dependencies.FirstOrDefault(x =>
                 x.Flags.HasFlag(BepInDependency.DependencyFlags.HardDependency) &&
