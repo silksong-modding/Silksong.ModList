@@ -8,7 +8,7 @@ namespace = "silksong_modding"
 description = "A modlist for Silksong."
 
 # Replace this with a correct repo URL if the default is not accurate
-websiteUrl = "https://github.com/silksong-modding/Silksong.Modlist"
+websiteUrl = "https://git.silksong-modding.org/silksong-modding/Silksong.ModList"
 containsNsfwContent = false
 
 

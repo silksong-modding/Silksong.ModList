@@ -13,7 +13,7 @@
         <!-- Ignore warning about processor architecture mismatch with PlayMaker ConditionalExpression -->
         <NoWarn>$(NoWarn);MSB3270</NoWarn>
         <RestorePackagesWithLockFile>True</RestorePackagesWithLockFile>
-        <!-- CI environment variable is automatically set by GitHub actions -->
+        <!-- CI environment variable is automatically set by GitHub Actions and Forgejo Actions -->
         <RestoreLockedMode Condition="'$(CI)' == 'true'">True</RestoreLockedMode>
         <!--Allow access of private members at runtime.-->
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -21,7 +21,7 @@
         <PathMap Condition="'$(Configuration)' == 'Release'">$(MSBuildProjectDirectory)=/</PathMap>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <PackageIcon>icon.png</PackageIcon>
-        <RepositoryUrl>https://github.com/silksong-modding/Silksong.Modlist</RepositoryUrl>
+        <RepositoryUrl>https://git.silksong-modding.org/silksong-modding/Silksong.ModList</RepositoryUrl>
     </PropertyGroup>
     
     <ItemGroup>
